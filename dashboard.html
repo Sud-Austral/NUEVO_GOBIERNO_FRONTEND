@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Gestión de Candidaturas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #60a5fa;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.4rem;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            transition: all 0.3s;
+            border-radius: 0.25rem;
+            margin: 0 0.2rem;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-link.active {
+            color: white !important;
+            background-color: var(--secondary-color);
+        }
+        
+        .kpi-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
+            min-height: 120px;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .kpi-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .kpi-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .kpi-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+        }
+        
+        .section-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+        
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        .btn-logout {
+            background-color: #dc2626;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-logout:hover {
+            background-color: #b91c1c;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-active { background-color: #dcfce7; color: #166534; }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-inactive { background-color: #fee2e2; color: #991b1b; }
+        .status-evaluating { background-color: #dbeafe; color: #1e40af; }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--primary-color);
+            animation: spin 1s ease infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-briefcase-fill me-2"></i>
+                Sistema de Gestión de Candidaturas
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="dashboard.html">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="cargos.html">
+                            <i class="bi bi-briefcase me-1"></i> Cargos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="candidatos.html">
+                            <i class="bi bi-people me-1"></i> Candidatos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="postulaciones.html">
+                            <i class="bi bi-file-earmark-text me-1"></i> Postulaciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="comparador.html">
+                            <i class="bi bi-bar-chart-line me-1"></i> Comparador
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="reportes.html">
+                            <i class="bi bi-file-earmark-bar-graph me-1"></i> Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="perfil.html">
+                            <i class="bi bi-person-circle me-1"></i> Perfil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="resultados.html">
+                            <i class="bi bi-clipboard-data me-1"></i> Resultados
+                        </a>
+                    </li>
+                </ul>
+                <button class="btn btn-logout" onclick="logout()">
+                    <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">Dashboard de Gestión de Candidaturas</h1>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="row mb-4" id="kpi-container">
+             <div class="col-md-3">
+                <div class="kpi-card d-flex align-items-center justify-content-center">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card d-flex align-items-center justify-content-center">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card d-flex align-items-center justify-content-center">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card d-flex align-items-center justify-content-center">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="section-card">
+                    <h3 class="section-title">Postulaciones por Partido Político</h3>
+                    <div class="chart-container">
+                        <canvas id="postulacionesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="section-card">
+                    <h3 class="section-title">Estado de las Evaluaciones</h3>
+                    <div class="chart-container">
+                        <canvas id="evaluacionesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secciones de datos -->
+        <div class="row">
+            <!-- Cargos -->
+            <div class="col-md-6">
+                <div class="section-card">
+                    <h3 class="section-title">Cargos Recientes</h3>
+                    <div class="table-container">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Nivel</th>
+                                    <th>Ámbito</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-cargos">
+                                <tr><td colspan="4" class="text-center"><div class="loading-spinner mx-auto"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-2">
+                        <a href="cargos.html" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Candidatos -->
+            <div class="col-md-6">
+                <div class="section-card">
+                    <h3 class="section-title">Candidatos Recientes</h3>
+                    <div class="table-container">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Partido</th>
+                                    <th>Contacto</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-candidatos">
+                                <tr><td colspan="4" class="text-center"><div class="loading-spinner mx-auto"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-2">
+                        <a href="candidatos.html" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Postulaciones -->
+            <div class="col-md-6">
+                <div class="section-card">
+                    <h3 class="section-title">Postulaciones Recientes</h3>
+                    <div class="table-container">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Candidato</th>
+                                    <th>Cargo</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-postulaciones">
+                                <tr><td colspan="4" class="text-center"><div class="loading-spinner mx-auto"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-2">
+                        <a href="postulaciones.html" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultados Consolidados -->
+            <div class="col-md-6">
+                <div class="section-card">
+                    <h3 class="section-title">Resultados Consolidados Recientes</h3>
+                    <div class="table-container">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Postulación</th>
+                                    <th>Puntaje IA</th>
+                                    <th>Puntaje Humano</th>
+                                    <th>Decisión Final</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-resultados">
+                                <tr><td colspan="4" class="text-center"><div class="loading-spinner mx-auto"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-2">
+                        <a href="resultados.html" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Sistema de Gestión de Candidaturas</h5>
+                    <p>Plataforma integral para la gestión del proceso de selección de cargos gubernamentales</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Enlaces rápidos</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="dashboard.html" class="text-white">Dashboard</a></li>
+                        <li><a href="candidatos.html" class="text-white">Candidatos</a></li>
+                        <li><a href="cargos.html" class="text-white">Cargos</a></li>
+                        <li><a href="reportes.html" class="text-white">Reportes</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contacto</h5>
+                    <p>
+                        <i class="bi bi-envelope me-2"></i>info@candidaturas.gob.cl<br>
+                        <i class="bi bi-telephone me-2"></i>+56 2 2345 6789
+                    </p>
+                </div>
+            </div>
+            <hr class="bg-white">
+            <div class="text-center">
+                <p>&copy; 2023 Gobierno de Chile - Todos los derechos reservados</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuración de la base URL
+        const BASE_URL = 'https://186.67.61.251:8001';
+
+        // Función de logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userRole');
+            window.location.href = `${BASE_URL}/index.html`;
+        }
+
+        // --- FUNCIONES DE RENDERIZADO ---
+
+        function renderKPIs(data) {
+            const { cargos, candidatos, postulaciones, resultados } = data;
+            const totalEvaluaciones = resultados.length;
+            const evaluacionesCompletadas = resultados.filter(r => r.decision_final && r.decision_final !== 'Pendiente').length;
+            const porcentajeCompletado = totalEvaluaciones > 0 ? Math.round((evaluacionesCompletadas / totalEvaluaciones) * 100) : 0;
+
+            const kpiContainer = document.getElementById('kpi-container');
+            kpiContainer.innerHTML = `
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="kpi-number">${cargos.length}</div>
+                                <div class="kpi-label">Cargos Disponibles</div>
+                            </div>
+                            <i class="bi bi-briefcase kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="kpi-number">${candidatos.length}</div>
+                                <div class="kpi-label">Candidatos Registrados</div>
+                            </div>
+                            <i class="bi bi-people kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="kpi-number">${postulaciones.length}</div>
+                                <div class="kpi-label">Postulaciones</div>
+                            </div>
+                            <i class="bi bi-file-earmark-text kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="kpi-number">${porcentajeCompletado}%</div>
+                                <div class="kpi-label">Evaluaciones Completadas</div>
+                            </div>
+                            <i class="bi bi-check-circle kpi-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderCargosTable(cargos) {
+            const tbody = document.getElementById('tabla-cargos');
+            if (!cargos || cargos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay cargos para mostrar.</td></tr>';
+                return;
+            }
+            // CORRECCIÓN: Usar nombres de columna de la BD
+            tbody.innerHTML = cargos.slice(0, 5).map(cargo => `
+                <tr>
+                    <td>${cargo.nombre_cargo || 'N/A'}</td>
+                    <td>${cargo.nivel_jerarquico || 'N/A'}</td>
+                    <td>${cargo.ambito || 'N/A'}</td>
+                    <td><span class="status-badge ${cargo.estado_cargo === 'activo' ? 'status-active' : 'status-pending'}">${cargo.estado_cargo || 'N/A'}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCandidatosTable(candidatos, partidosMap) {
+            const tbody = document.getElementById('tabla-candidatos');
+            if (!candidatos || candidatos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay candidatos para mostrar.</td></tr>';
+                return;
+            }
+            // CORRECCIÓN: Concatenar nombres y usar campos correctos de la BD
+            tbody.innerHTML = candidatos.slice(0, 5).map(candidato => {
+                const nombreCompleto = `${candidato.nombres} ${candidato.apellido_paterno} ${candidato.apellido_materno || ''}`.trim();
+                return `
+                <tr>
+                    <td>${nombreCompleto || 'N/A'}</td>
+                    <td>${partidosMap.get(candidato.id_partido) || 'Sin partido'}</td>
+                    <td>${candidato.contacto_email || 'N/A'}</td>
+                    <td><span class="status-badge ${candidato.estado_general === 'activo' ? 'status-active' : 'status-inactive'}">${candidato.estado_general || 'N/A'}</span></td>
+                </tr>
+            `}).join('');
+        }
+
+        function renderPostulacionesTable(postulaciones, candidatosMap, cargosMap) {
+            const tbody = document.getElementById('tabla-postulaciones');
+            if (!postulaciones || postulaciones.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay postulaciones para mostrar.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = postulaciones.slice(0, 5).map(post => {
+                // CORRECCIÓN: Usar IDs correctos de la BD
+                const candidato = candidatosMap.get(post.id_candidato);
+                const cargo = cargosMap.get(post.id_cargo);
+                const nombreCompleto = candidato ? `${candidato.nombres} ${candidato.apellido_paterno}`.trim() : 'Candidato desconocido';
+                return `
+                    <tr>
+                        <td>${nombreCompleto}</td>
+                        <td>${cargo?.nombre_cargo || 'Cargo desconocido'}</td>
+                        <td>${new Date(post.fecha_postulacion).toLocaleDateString('es-CL')}</td>
+                        <td><span class="status-badge status-evaluating">En evaluación</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderResultadosTable(resultados, candidatosMap, cargosMap) {
+            const tbody = document.getElementById('tabla-resultados');
+            if (!resultados || resultados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay resultados consolidados.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = resultados.slice(0, 5).map(res => {
+                // Asumiendo que la API anida la postulación con los IDs correctos
+                const postulacion = res.postulacion; 
+                const candidato = candidatosMap.get(postulacion?.id_candidato);
+                const cargo = cargosMap.get(postulacion?.id_cargo);
+                const nombreCompleto = candidato ? `${candidato.nombres} ${candidato.apellido_paterno}`.trim() : 'N/A';
+                
+                const decisionFinal = res.decision_final || 'Pendiente';
+                const decisionClass = decisionFinal === 'Aprobado' ? 'status-active' : decisionFinal === 'Rechazado' ? 'status-inactive' : 'status-pending';
+
+                // CORRECCIÓN: Asegurar que los puntajes sean números antes de formatear
+                const puntajeIA = Number(res.puntaje_ia);
+                const puntajeHumano = Number(res.promedio_humano);
+                const formattedPuntajeIA = !isNaN(puntajeIA) ? puntajeIA.toFixed(1) : 'N/A';
+                const formattedPuntajeHumano = !isNaN(puntajeHumano) ? puntajeHumano.toFixed(1) : 'N/A';
+
+                return `
+                    <tr>
+                        <td>${nombreCompleto} - ${cargo?.nombre_cargo || 'N/A'}</td>
+                        <td>${formattedPuntajeIA}</td>
+                        <td>${formattedPuntajeHumano}</td>
+                        <td><span class="status-badge ${decisionClass}">${decisionFinal}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderPostulacionesChart(postulaciones, candidatosMap, partidosMap) {
+            const counts = {};
+            postulaciones.forEach(post => {
+                // CORRECCIÓN: Obtener el partido a través del candidato
+                const candidato = candidatosMap.get(post.id_candidato);
+                if (candidato) {
+                    const partidoId = candidato.id_partido;
+                    const partidoNombre = partidosMap.get(partidoId) || 'Sin partido';
+                    counts[partidoNombre] = (counts[partidoNombre] || 0) + 1;
+                }
+            });
+
+            const labels = Object.keys(counts);
+            const data = Object.values(counts);
+
+            if (window.postulacionesChartInstance) {
+                window.postulacionesChartInstance.data.labels = labels;
+                window.postulacionesChartInstance.data.datasets[0].data = data;
+                window.postulacionesChartInstance.update();
+            }
+        }
+
+        function renderEvaluacionesChart(resultados) {
+            let completadas = 0, enProgreso = 0, pendientes = 0;
+
+            resultados.forEach(res => {
+                const tieneIA = res.puntaje_ia !== null && res.puntaje_ia !== undefined;
+                const tieneHumano = res.promedio_humano !== null && res.promedio_humano !== undefined;
+                const tieneDecision = res.decision_final && res.decision_final !== 'Pendiente';
+
+                if (tieneDecision) {
+                    completadas++;
+                } else if (tieneIA || tieneHumano) {
+                    enProgreso++;
+                } else {
+                    pendientes++;
+                }
+            });
+
+            if (window.evaluacionesChartInstance) {
+                window.evaluacionesChartInstance.data.datasets[0].data = [completadas, enProgreso, pendientes];
+                window.evaluacionesChartInstance.update();
+            }
+        }
+
+
+        // --- FUNCIÓN PRINCIPAL DE CARGA ---
+        async function loadDashboardData() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    console.error('Token de autenticación no encontrado.');
+                    window.location.href = `${BASE_URL}/index.html`;
+                    return;
+                }
+
+                const headers = { 'Authorization': `Bearer ${token}` };
+
+                // Realizar todas las peticiones a la API en paralelo
+                const [
+                    cargosRes,
+                    candidatosRes,
+                    postulacionesRes,
+                    resultadosRes,
+                    partidosRes
+                ] = await Promise.all([
+                    fetch(`${BASE_URL}/cargos`, { headers }),
+                    fetch(`${BASE_URL}/candidatos`, { headers }),
+                    fetch(`${BASE_URL}/postulaciones`, { headers }),
+                    fetch(`${BASE_URL}/resultados-consolidados`, { headers }),
+                    fetch(`${BASE_URL}/partidos`, { headers })
+                ]);
+
+                // Verificar si alguna petición falló
+                const responses = [cargosRes, candidatosRes, postulacionesRes, resultadosRes, partidosRes];
+                for (const res of responses) {
+                    if (!res.ok) {
+                        throw new Error(`Error en la petición a ${res.url}: ${res.statusText}`);
+                    }
+                }
+                
+                // Convertir a JSON
+                const [
+                    cargos,
+                    candidatos,
+                    postulaciones,
+                    resultados,
+                    partidos
+                ] = await Promise.all(responses.map(res => res.json()));
+
+                // CORRECCIÓN: Crear mapas con IDs y nombres correctos de la BD
+                const partidosMap = new Map(partidos.map(p => [p.id_partido, p.nombre_partido]));
+                const candidatosMap = new Map(candidatos.map(c => [c.id_candidato, c]));
+                const cargosMap = new Map(cargos.map(c => [c.id_cargo, c]));
+
+                // --- ACTUALIZAR EL DASHBOARD CON LOS DATOS REALES ---
+                const data = { cargos, candidatos, postulaciones, resultados };
+                renderKPIs(data);
+                renderCargosTable(cargos);
+                renderCandidatosTable(candidatos, partidosMap);
+                renderPostulacionesTable(postulaciones, candidatosMap, cargosMap);
+                renderResultadosTable(resultados, candidatosMap, cargosMap);
+                renderPostulacionesChart(postulaciones, candidatosMap, partidosMap);
+                renderEvaluacionesChart(resultados);
+
+            } catch (error) {
+                console.error('Error al cargar los datos del dashboard:', error);
+                document.getElementById('kpi-container').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Error:</strong> No se pudieron cargar los datos desde el servidor. ${error.message}
+                        </div>
+                    </div>
+                `;
+                ['tabla-cargos', 'tabla-candidatos', 'tabla-postulaciones', 'tabla-resultados'].forEach(id => {
+                    document.getElementById(id).innerHTML = `<tr><td colspan="4" class="text-center text-danger">Error al cargar datos.</td></tr>`;
+                });
+            }
+        }
+
+        // --- INICIALIZACIÓN DE GRÁFICOS ---
+        function initCharts() {
+            const postCtx = document.getElementById('postulacionesChart').getContext('2d');
+            window.postulacionesChartInstance = new Chart(postCtx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Número de Postulaciones', data: [], backgroundColor: 'rgba(54, 162, 235, 0.7)', borderColor: 'rgba(54, 162, 235, 1)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            const evalCtx = document.getElementById('evaluacionesChart').getContext('2d');
+            window.evaluacionesChartInstance = new Chart(evalCtx, {
+                type: 'doughnut',
+                data: { labels: ['Completadas', 'En Progreso', 'Pendientes'], datasets: [{ data: [0, 0, 0], backgroundColor: ['rgba(75, 192, 192, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(255, 99, 132, 0.7)'], borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        // --- EJECUCIÓN AL CARGAR LA PÁGINA ---
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>
