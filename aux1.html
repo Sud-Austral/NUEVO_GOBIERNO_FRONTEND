@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Evaluación Humana</title>
+</head>
+<body>
+    <h1>Crear Evaluación Humana</h1>
+    
+    <div id="login-section" style="display: block;">
+        <h2>Iniciar Sesión</h2>
+        <form id="login-form">
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" required>
+            </div>
+            <div>
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit">Iniciar Sesión</button>
+        </form>
+        <div id="login-error" style="color: red;"></div>
+    </div>
+    
+    <div id="evaluation-section" style="display: none;">
+        <h2>Seleccionar Candidato y Postulación</h2>
+        
+        <div>
+            <label for="candidato-select">Candidato:</label>
+            <select id="candidato-select">
+                <option value="">-- Seleccione un candidato --</option>
+            </select>
+        </div>
+        
+        <div id="postulaciones-container" style="display: none;">
+            <label for="postulacion-select">Postulación:</label>
+            <select id="postulacion-select">
+                <option value="">-- Seleccione una postulación --</option>
+            </select>
+        </div>
+        
+        <div id="evaluacion-form" style="display: none;">
+            <h2>Detalles de la Evaluación</h2>
+            
+            <div>
+                <label for="tipo-evaluacion">Tipo de Evaluación:</label>
+                <select id="tipo-evaluacion">
+                    <option value="competencias">Competencias</option>
+                    <option value="experiencia">Experiencia</option>
+                    <option value="entrevista">Entrevista</option>
+                    <option value="general">General</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="puntaje-numerico">Puntaje Numérico:</label>
+                <input type="number" id="puntaje-numerico" min="0" max="100" step="0.1">
+            </div>
+            
+            <div>
+                <label for="texto-evaluacion">Texto de Evaluación:</label>
+                <textarea id="texto-evaluacion" rows="5" cols="50"></textarea>
+            </div>
+            
+            <div>
+                <label for="datos-estructurados">Datos Estructurados (JSON):</label>
+                <textarea id="datos-estructurados" rows="5" cols="50" placeholder='{"criterio1": "valor1", "criterio2": "valor2"}'></textarea>
+            </div>
+            
+            <button id="crear-evaluacion-btn">Crear Evaluación</button>
+        </div>
+        
+        <div id="mensaje" style="margin-top: 20px;"></div>
+        
+        <button id="logout-btn" style="margin-top: 20px;">Cerrar Sesión</button>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://186.67.61.251:8001';
+        let authToken = '';
+        let currentUser = null;
+        let candidatos = [];
+        let postulaciones = [];
+        
+        // Función para mostrar mensajes
+        function mostrarMensaje(elementId, mensaje, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = mensaje;
+            element.style.color = isError ? 'red' : 'green';
+            setTimeout(() => {
+                element.textContent = '';
+            }, 5000);
+        }
+        
+        // Función para iniciar sesión
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    currentUser = data.user;
+                    
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('evaluation-section').style.display = 'block';
+                    
+                    // Cargar candidatos
+                    await cargarCandidatos();
+                } else {
+                    const errorData = await response.json();
+                    mostrarMensaje('login-error', errorData.message || 'Error al iniciar sesión', true);
+                }
+            } catch (error) {
+                mostrarMensaje('login-error', 'Error de conexión: ' + error.message, true);
+            }
+        });
+        
+        // Función para cerrar sesión
+        document.getElementById('logout-btn').addEventListener('click', async function() {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+            }
+            
+            authToken = '';
+            currentUser = null;
+            
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('evaluation-section').style.display = 'none';
+            
+            // Limpiar formulario
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        });
+        
+        // Función para cargar candidatos
+        async function cargarCandidatos() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/candidatos`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    candidatos = await response.json();
+                    const select = document.getElementById('candidato-select');
+                    
+                    // Limpiar opciones existentes (excepto la primera)
+                    while (select.options.length > 1) {
+                        select.remove(1);
+                    }
+                    
+                    // Agregar opciones de candidatos
+                    candidatos.forEach(candidato => {
+                        const option = document.createElement('option');
+                        option.value = candidato.id_candidato;
+                        option.textContent = `${candidato.nombres} ${candidato.apellido_paterno} ${candidato.apellido_materno || ''}`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    mostrarMensaje('mensaje', 'Error al cargar candidatos', true);
+                }
+            } catch (error) {
+                mostrarMensaje('mensaje', 'Error de conexión: ' + error.message, true);
+            }
+        }
+        
+        // Función para cargar postulaciones cuando se selecciona un candidato
+        document.getElementById('candidato-select').addEventListener('change', async function() {
+            const candidatoId = this.value;
+            
+            if (!candidatoId) {
+                document.getElementById('postulaciones-container').style.display = 'none';
+                document.getElementById('evaluacion-form').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/postulaciones?id_candidato=${candidatoId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    postulaciones = await response.json();
+                    const select = document.getElementById('postulacion-select');
+                    
+                    // Limpiar opciones existentes (excepto la primera)
+                    while (select.options.length > 1) {
+                        select.remove(1);
+                    }
+                    
+                    // Agregar opciones de postulaciones
+                    postulaciones.forEach(postulacion => {
+                        const option = document.createElement('option');
+                        option.value = postulacion.id_postulacion;
+                        option.textContent = `${postulacion.nombre_cargo} - ${postulacion.fecha_postulacion}`;
+                        select.appendChild(option);
+                    });
+                    
+                    document.getElementById('postulaciones-container').style.display = 'block';
+                } else {
+                    mostrarMensaje('mensaje', 'Error al cargar postulaciones', true);
+                }
+            } catch (error) {
+                mostrarMensaje('mensaje', 'Error de conexión: ' + error.message, true);
+            }
+        });
+        
+        // Función para mostrar el formulario de evaluación cuando se selecciona una postulación
+        document.getElementById('postulacion-select').addEventListener('change', function() {
+            const postulacionId = this.value;
+            
+            if (postulacionId) {
+                document.getElementById('evaluacion-form').style.display = 'block';
+            } else {
+                document.getElementById('evaluacion-form').style.display = 'none';
+            }
+        });
+        
+        // Función para crear evaluación
+        document.getElementById('crear-evaluacion-btn').addEventListener('click', async function() {
+            const postulacionId = document.getElementById('postulacion-select').value;
+            const tipoEvaluacion = document.getElementById('tipo-evaluacion').value;
+            const puntajeNumerico = document.getElementById('puntaje-numerico').value;
+            const textoEvaluacion = document.getElementById('texto-evaluacion').value;
+            const datosEstructuradosText = document.getElementById('datos-estructurados').value;
+            
+            if (!postulacionId || !tipoEvaluacion) {
+                mostrarMensaje('mensaje', 'Por favor complete los campos obligatorios', true);
+                return;
+            }
+            
+            let datosEstructurados = null;
+            if (datosEstructuradosText) {
+                try {
+                    datosEstructurados = JSON.parse(datosEstructuradosText);
+                } catch (error) {
+                    mostrarMensaje('mensaje', 'El formato de los datos estructurados no es válido JSON', true);
+                    return;
+                }
+            }
+            
+            const evaluacionData = {
+                id_postulacion: parseInt(postulacionId),
+                id_usuario_evaluador: currentUser.id,
+                tipo_evaluacion: tipoEvaluacion,
+                puntaje_numerico: puntajeNumerico ? parseFloat(puntajeNumerico) : null,
+                texto_evaluacion: textoEvaluacion || null,
+                datos_estructurados: datosEstructurados
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/evaluaciones-humanas`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(evaluacionData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    mostrarMensaje('mensaje', `Evaluación creada exitosamente con ID: ${data.id_evaluacion_humana}`);
+                    
+                    // Limpiar formulario
+                    document.getElementById('candidato-select').value = '';
+                    document.getElementById('postulaciones-container').style.display = 'none';
+                    document.getElementById('evaluacion-form').style.display = 'none';
+                    document.getElementById('postulacion-select').value = '';
+                    document.getElementById('tipo-evaluacion').value = 'competencias';
+                    document.getElementById('puntaje-numerico').value = '';
+                    document.getElementById('texto-evaluacion').value = '';
+                    document.getElementById('datos-estructurados').value = '';
+                } else {
+                    const errorData = await response.json();
+                    mostrarMensaje('mensaje', errorData.message || 'Error al crear evaluación', true);
+                }
+            } catch (error) {
+                mostrarMensaje('mensaje', 'Error de conexión: ' + error.message, true);
+            }
+        });
+    </script>
+</body>
+</html>

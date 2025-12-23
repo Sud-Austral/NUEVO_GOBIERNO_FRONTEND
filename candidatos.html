@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Candidatos - Sistema de Gestión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #60a5fa;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.4rem;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            transition: all 0.3s;
+            border-radius: 0.25rem;
+            margin: 0 0.2rem;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-link.active {
+            color: white !important;
+            background-color: var(--secondary-color);
+        }
+        
+        .section-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #4b5563;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(96, 165, 250, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-logout {
+            background-color: #dc2626;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-logout:hover {
+            background-color: #b91c1c;
+        }
+        
+        .candidate-card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .candidate-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .candidate-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .candidate-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+        
+        .candidate-details h4 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+        
+        .candidate-details p {
+            margin: 0;
+            color: #6b7280;
+        }
+        
+        .postulation-info {
+            background-color: #f3f4f6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .evaluation-form {
+            background-color: #f9fafb;
+            border-radius: 0.375rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .message-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 350px;
+        }
+        
+        .alert {
+            border-radius: 0.5rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--primary-color);
+            animation: spin 1s ease infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+        }
+        
+        .no-data-message {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+        
+        .no-data-message i {
+            font-size: 3rem;
+            color: #d1d5db;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-briefcase-fill me-2"></i>
+                Sistema de Gestión de Candidaturas
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="cargos.html">
+                            <i class="bi bi-briefcase me-1"></i> Cargos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="candidatos.html">
+                            <i class="bi bi-people me-1"></i> Candidatos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="postulaciones.html">
+                            <i class="bi bi-file-earmark-text me-1"></i> Postulaciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="evaluacion.html">
+                            <i class="bi bi-clipboard-check me-1"></i> Evaluación
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="comparador.html">
+                            <i class="bi bi-bar-chart-line me-1"></i> Comparador
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="reportes.html">
+                            <i class="bi bi-file-earmark-bar-graph me-1"></i> Reportes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="resultados.html">
+                            <i class="bi bi-clipboard-data me-1"></i> Resultados
+                        </a>
+                    </li>
+                </ul>
+                <button class="btn btn-logout" onclick="logout()">
+                    <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor de mensajes -->
+    <div class="message-container" id="message-container"></div>
+
+    <!-- Contenido principal -->
+    <main class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">Evaluación de Candidatos</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Panel de selección -->
+            <div class="col-md-4">
+                <div class="section-card">
+                    <h3 class="section-title">Seleccionar Candidato y Postulación</h3>
+                    
+                    <div class="mb-3">
+                        <label for="candidato-select" class="form-label">Candidato:</label>
+                        <select class="form-select" id="candidato-select">
+                            <option value="">-- Seleccione un candidato --</option>
+                        </select>
+                    </div>
+                    
+                    <div id="postulaciones-container" class="mb-3" style="display: none;">
+                        <label for="postulacion-select" class="form-label">Postulación:</label>
+                        <select class="form-select" id="postulacion-select">
+                            <option value="">-- Seleccione una postulación --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Mensaje para cuando no hay postulaciones -->
+                    <div id="no-postulaciones-message" class="alert alert-warning" style="display: none;">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Este candidato no tiene postulaciones registradas.
+                    </div>
+                    
+                    <div id="loading-candidatos" class="text-center py-3">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-2">Cargando candidatos...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel de evaluación -->
+            <div class="col-md-8">
+                <div id="candidate-info" class="candidate-card" style="display: none;">
+                    <h3 class="section-title">Información del Candidato</h3>
+                    
+                    <div class="candidate-info">
+                        <div class="candidate-avatar" id="candidate-avatar">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div class="candidate-details">
+                            <h4 id="candidate-name">Nombre del Candidato</h4>
+                            <p id="candidate-party">Partido Político</p>
+                        </div>
+                    </div>
+                    
+                    <div id="postulation-info" class="postulation-info" style="display: none;">
+                        <h5>Información de la Postulación</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Cargo:</strong> <span id="postulation-cargo">-</span></p>
+                                <p><strong>Ámbito:</strong> <span id="postulation-ambito">-</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Fecha de Postulación:</strong> <span id="postulation-fecha">-</span></p>
+                                <p><strong>Estado:</strong> <span id="postulation-estado">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="evaluacion-form" class="evaluation-form" style="display: none;">
+                        <h5>Detalles de la Evaluación</h5>
+                        
+                        <div class="mb-3">
+                            <label for="puntaje-numerico" class="form-label">Puntaje Numérico (0-100):</label>
+                            <input type="number" class="form-control" id="puntaje-numerico" min="0" max="100" step="0.1">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="texto-evaluacion" class="form-label">Texto de Evaluación:</label>
+                            <textarea class="form-control" id="texto-evaluacion" rows="5"></textarea>
+                        </div>
+                        
+                        <button id="crear-evaluacion-btn" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Crear Evaluación
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="no-selection" class="section-card">
+                    <div class="no-data-message">
+                        <i class="bi bi-person-check"></i>
+                        <h4>Seleccione un Candidato</h4>
+                        <p>Para comenzar la evaluación, por favor seleccione un candidato de la lista de la izquierda.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Sistema de Gestión de Candidaturas</h5>
+                    <p>Plataforma integral para la gestión del proceso de selección de cargos gubernamentales</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Enlaces rápidos</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="dashboard.html" class="text-white">Dashboard</a></li>
+                        <li><a href="candidatos.html" class="text-white">Candidatos</a></li>
+                        <li><a href="cargos.html" class="text-white">Cargos</a></li>
+                        <li><a href="reportes.html" class="text-white">Reportes</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contacto</h5>
+                    <p>
+                        <i class="bi bi-envelope me-2"></i>info@candidaturas.gob.cl<br>
+                        <i class="bi bi-telephone me-2"></i>+56 2 2345 6789
+                    </p>
+                </div>
+            </div>
+            <hr class="bg-white">
+            <div class="text-center">
+                <p>&copy; 2023 Gobierno de Chile - Todos los derechos reservados</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuración de la base URL
+        const API_BASE_URL = 'https://186.67.61.251:8001';
+        let authToken = '';
+        let currentUser = null;
+        let candidatos = [];
+        let postulaciones = [];
+        let partidos = [];
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            // Obtener token de autenticación del localStorage
+            authToken = localStorage.getItem('authToken');
+            
+            if (!authToken) {
+                // Redirigir a la página de login si no hay token
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Obtener información del usuario
+            try {
+                const userData = localStorage.getItem('userData');
+                if (userData) {
+                    currentUser = JSON.parse(userData);
+                }
+            } catch (error) {
+                console.error('Error al obtener datos del usuario:', error);
+            }
+            
+            // Cargar candidatos
+            cargarCandidatos();
+        });
+        
+        // Función para mostrar mensajes
+        function mostrarMensaje(mensaje, isError = false) {
+            const messageContainer = document.getElementById('message-container');
+            const alertClass = isError ? 'alert-danger' : 'alert-success';
+            const icon = isError ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill';
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `alert ${alertClass} alert-dismissible fade show`;
+            messageElement.innerHTML = `
+                <i class="bi ${icon} me-2"></i>${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            messageContainer.appendChild(messageElement);
+            
+            // Eliminar el mensaje después de 5 segundos
+            setTimeout(() => {
+                if (messageElement.parentNode) {
+                    messageElement.parentNode.removeChild(messageElement);
+                }
+            }, 5000);
+        }
+        
+        // Función para cerrar sesión
+        function logout() {
+            try {
+                fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+            }
+            
+            // Limpiar localStorage
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userData');
+            
+            // Redirigir a la página de login
+            window.location.href = 'index.html';
+        }
+        
+        // Función para cargar candidatos
+        async function cargarCandidatos() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/candidatos`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    candidatos = await response.json();
+                    const select = document.getElementById('candidato-select');
+                    
+                    // Limpiar opciones existentes (excepto la primera)
+                    while (select.options.length > 1) {
+                        select.remove(1);
+                    }
+                    
+                    // Agregar opciones de candidatos
+                    candidatos.forEach(candidato => {
+                        const option = document.createElement('option');
+                        option.value = candidato.id_candidato;
+                        option.textContent = `${candidato.nombres} ${candidato.apellido_paterno} ${candidato.apellido_materno || ''}`;
+                        select.appendChild(option);
+                    });
+                    
+                    // Ocultar indicador de carga
+                    document.getElementById('loading-candidatos').style.display = 'none';
+                } else {
+                    mostrarMensaje('Error al cargar candidatos', true);
+                    document.getElementById('loading-candidatos').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error al cargar candidatos. Inténtelo de nuevo.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión: ' + error.message, true);
+                document.getElementById('loading-candidatos').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error de conexión. Verifique su conexión a internet.
+                    </div>
+                `;
+            }
+        }
+        
+        // Función para cargar postulaciones cuando se selecciona un candidato
+        document.getElementById('candidato-select').addEventListener('change', async function() {
+            const candidatoId = this.value;
+            
+            // Ocultar todos los elementos relacionados con postulaciones
+            document.getElementById('postulaciones-container').style.display = 'none';
+            document.getElementById('evaluacion-form').style.display = 'none';
+            document.getElementById('no-postulaciones-message').style.display = 'none';
+            document.getElementById('candidate-info').style.display = 'none';
+            document.getElementById('no-selection').style.display = 'block';
+            
+            if (!candidatoId) {
+                return;
+            }
+            
+            // Mostrar información del candidato
+            const candidato = candidatos.find(c => c.id_candidato == candidatoId);
+            if (candidato) {
+                document.getElementById('candidate-name').textContent = `${candidato.nombres} ${candidato.apellido_paterno} ${candidato.apellido_materno || ''}`;
+                
+                // Obtener iniciales del nombre para el avatar
+                const nombres = candidato.nombres.split(' ');
+                const apellidos = [candidato.apellido_paterno, candidato.apellido_materno].filter(Boolean);
+                const iniciales = [
+                    nombres[0] ? nombres[0][0] : '',
+                    apellidos[0] ? apellidos[0][0] : ''
+                ].join('').toUpperCase();
+                
+                document.getElementById('candidate-avatar').textContent = iniciales || '<i class="bi bi-person-fill"></i>';
+                
+                // Mostrar información del partido si está disponible
+                if (candidato.partido_politico) {
+                    document.getElementById('candidate-party').textContent = candidato.partido_politico;
+                } else {
+                    document.getElementById('candidate-party').textContent = 'Sin información de partido';
+                }
+                
+                document.getElementById('candidate-info').style.display = 'block';
+                document.getElementById('no-selection').style.display = 'none';
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/postulaciones?id_candidato=${candidatoId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    postulaciones = await response.json();
+                    
+                    if (postulaciones.length === 0) {
+                        // Mostrar mensaje de no hay postulaciones
+                        document.getElementById('no-postulaciones-message').style.display = 'block';
+                    } else {
+                        const select = document.getElementById('postulacion-select');
+                        
+                        // Limpiar opciones existentes (excepto la primera)
+                        while (select.options.length > 1) {
+                            select.remove(1);
+                        }
+                        
+                        // Agregar opciones de postulaciones
+                        postulaciones.forEach(postulacion => {
+                            const option = document.createElement('option');
+                            option.value = postulacion.id_postulacion;
+                            option.textContent = `${postulacion.nombre_cargo} - ${postulacion.fecha_postulacion}`;
+                            select.appendChild(option);
+                        });
+                        
+                        document.getElementById('postulaciones-container').style.display = 'block';
+                    }
+                } else {
+                    mostrarMensaje('Error al cargar postulaciones', true);
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión: ' + error.message, true);
+            }
+        });
+        
+        // Función para mostrar el formulario de evaluación cuando se selecciona una postulación
+        document.getElementById('postulacion-select').addEventListener('change', function() {
+            const postulacionId = this.value;
+            
+            if (postulacionId) {
+                // Buscar la postulación seleccionada
+                const postulacion = postulaciones.find(p => p.id_postulacion == postulacionId);
+                
+                if (postulacion) {
+                    // Mostrar información de la postulación
+                    document.getElementById('postulation-cargo').textContent = postulacion.nombre_cargo || 'N/A';
+                    document.getElementById('postulation-ambito').textContent = postulacion.ambito || 'N/A';
+                    document.getElementById('postulation-fecha').textContent = postulacion.fecha_postulacion || 'N/A';
+                    document.getElementById('postulation-estado').textContent = postulacion.estado || 'N/A';
+                    
+                    document.getElementById('postulation-info').style.display = 'block';
+                    document.getElementById('evaluacion-form').style.display = 'block';
+                }
+            } else {
+                document.getElementById('postulation-info').style.display = 'none';
+                document.getElementById('evaluacion-form').style.display = 'none';
+            }
+        });
+        
+        // Función para crear evaluación
+        document.getElementById('crear-evaluacion-btn').addEventListener('click', async function() {
+            const postulacionId = document.getElementById('postulacion-select').value;
+            const puntajeNumerico = document.getElementById('puntaje-numerico').value;
+            const textoEvaluacion = document.getElementById('texto-evaluacion').value;
+            
+            if (!postulacionId) {
+                mostrarMensaje('Por favor seleccione una postulación', true);
+                return;
+            }
+            
+            if (!puntajeNumerico && !textoEvaluacion) {
+                mostrarMensaje('Por favor ingrese al menos un puntaje numérico o un texto de evaluación', true);
+                return;
+            }
+            
+            const evaluacionData = {
+                id_postulacion: parseInt(postulacionId),
+                id_usuario_evaluador: currentUser ? currentUser.id : 1,
+                puntaje_numerico: puntajeNumerico ? parseFloat(puntajeNumerico) : null,
+                texto_evaluacion: textoEvaluacion || null
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/evaluaciones-humanas`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(evaluacionData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    mostrarMensaje(`Evaluación creada exitosamente con ID: ${data.id_evaluacion_humana}`);
+                    
+                    // Limpiar formulario
+                    document.getElementById('candidato-select').value = '';
+                    document.getElementById('postulaciones-container').style.display = 'none';
+                    document.getElementById('evaluacion-form').style.display = 'none';
+                    document.getElementById('no-postulaciones-message').style.display = 'none';
+                    document.getElementById('candidate-info').style.display = 'none';
+                    document.getElementById('no-selection').style.display = 'block';
+                    document.getElementById('postulacion-select').value = '';
+                    document.getElementById('puntaje-numerico').value = '';
+                    document.getElementById('texto-evaluacion').value = '';
+                } else {
+                    const errorData = await response.json();
+                    mostrarMensaje(errorData.message || 'Error al crear evaluación', true);
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión: ' + error.message, true);
+            }
+        });
+    </script>
+</body>
+</html>
