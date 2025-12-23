@@ -204,20 +204,6 @@
             color: #d1d5db;
             margin-bottom: 1rem;
         }
-        
-        .filter-section {
-            background-color: #f0f4f8;
-            border-radius: 0.375rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .filter-title {
-            font-weight: 600;
-            color: var(--primary-color);
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-        }
     </style>
 </head>
 <body>
@@ -297,38 +283,6 @@
             <div class="col-md-4">
                 <div class="section-card">
                     <h3 class="section-title">Seleccionar Candidato y Postulación</h3>
-                    
-                    <!-- Filtros -->
-                    <div class="filter-section">
-                        <div class="filter-title">
-                            <i class="bi bi-funnel me-1"></i>Filtros de búsqueda
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-2">
-                                <label for="sexo-filter" class="form-label">Sexo:</label>
-                                <select class="form-select form-select-sm" id="sexo-filter">
-                                    <option value="">Todos</option>
-                                    <option value="Masculino">Masculino</option>
-                                    <option value="Femenino">Femenino</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label for="partido-filter" class="form-label">Partido:</label>
-                                <select class="form-select form-select-sm" id="partido-filter">
-                                    <option value="">Todos</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="d-grid gap-2 mt-2">
-                            <button class="btn btn-sm btn-primary" id="apply-filters-btn">
-                                <i class="bi bi-check-circle me-1"></i>Aplicar filtros
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary" id="clear-filters-btn">
-                                <i class="bi bi-x-circle me-1"></i>Limpiar filtros
-                            </button>
-                        </div>
-                    </div>
                     
                     <div class="mb-3">
                         <label for="candidato-select" class="form-label">Candidato:</label>
@@ -457,7 +411,6 @@
         let candidatos = [];
         let postulaciones = [];
         let partidos = [];
-        let filteredCandidatos = [];
         
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
@@ -482,10 +435,6 @@
             
             // Cargar candidatos
             cargarCandidatos();
-            
-            // Agregar event listeners para los filtros
-            document.getElementById('apply-filters-btn').addEventListener('click', aplicarFiltros);
-            document.getElementById('clear-filters-btn').addEventListener('click', limpiarFiltros);
         });
         
         // Función para mostrar mensajes
@@ -543,29 +492,21 @@
                 
                 if (response.ok) {
                     candidatos = await response.json();
-                    filteredCandidatos = [...candidatos]; // Inicialmente, todos los candidatos están filtrados
-                    
-                    // Extraer partidos únicos para el filtro
-                    const partidosUnicos = [...new Set(candidatos.map(c => c.nombre_partido))];
-                    const partidoSelect = document.getElementById('partido-filter');
+                    console.log("candidatos",candidatos)
+                    const select = document.getElementById('candidato-select');
                     
                     // Limpiar opciones existentes (excepto la primera)
-                    while (partidoSelect.options.length > 1) {
-                        partidoSelect.remove(1);
+                    while (select.options.length > 1) {
+                        select.remove(1);
                     }
                     
-                    // Agregar opciones de partidos
-                    partidosUnicos.forEach(partido => {
-                        if (partido) { // Solo agregar si no es nulo o vacío
-                            const option = document.createElement('option');
-                            option.value = partido;
-                            option.textContent = partido;
-                            partidoSelect.appendChild(option);
-                        }
+                    // Agregar opciones de candidatos
+                    candidatos.forEach(candidato => {
+                        const option = document.createElement('option');
+                        option.value = candidato.id_candidato;
+                        option.textContent = `${candidato.nombres} ${candidato.apellido_paterno} ${candidato.apellido_materno || ''}`;
+                        select.appendChild(option);
                     });
-                    
-                    // Actualizar selector de candidatos
-                    actualizarSelectorCandidatos();
                     
                     // Ocultar indicador de carga
                     document.getElementById('loading-candidatos').style.display = 'none';
@@ -589,69 +530,6 @@
             }
         }
         
-        // Función para actualizar el selector de candidatos con la lista filtrada
-        function actualizarSelectorCandidatos() {
-            const select = document.getElementById('candidato-select');
-            
-            // Limpiar opciones existentes (excepto la primera)
-            while (select.options.length > 1) {
-                select.remove(1);
-            }
-            
-            // Agregar opciones de candidatos filtrados
-            filteredCandidatos.forEach(candidato => {
-                const option = document.createElement('option');
-                option.value = candidato.id_candidato;
-                option.textContent = `${candidato.nombres} ${candidato.apellido_paterno} ${candidato.apellido_materno || ''}`;
-                select.appendChild(option);
-            });
-            
-            // Limpiar selección actual
-            select.value = '';
-            
-            // Ocultar elementos relacionados con postulaciones
-            document.getElementById('postulaciones-container').style.display = 'none';
-            document.getElementById('evaluacion-form').style.display = 'none';
-            document.getElementById('no-postulaciones-message').style.display = 'none';
-            document.getElementById('candidate-info').style.display = 'none';
-            document.getElementById('no-selection').style.display = 'block';
-        }
-        
-        // Función para aplicar filtros
-        function aplicarFiltros() {
-            const sexoFilter = document.getElementById('sexo-filter').value;
-            const partidoFilter = document.getElementById('partido-filter').value;
-            
-            // Filtrar candidatos según los criterios seleccionados
-            filteredCandidatos = candidatos.filter(candidato => {
-                let cumpleSexo = !sexoFilter || candidato.sexo_detalle === sexoFilter;
-                let cumplePartido = !partidoFilter || candidato.nombre_partido === partidoFilter;
-                
-                return cumpleSexo && cumplePartido;
-            });
-            
-            // Actualizar selector de candidatos
-            actualizarSelectorCandidatos();
-            
-            // Mostrar mensaje con el número de resultados
-            mostrarMensaje(`Se encontraron ${filteredCandidatos.length} candidatos con los filtros aplicados.`);
-        }
-        
-        // Función para limpiar filtros
-        function limpiarFiltros() {
-            document.getElementById('sexo-filter').value = '';
-            document.getElementById('partido-filter').value = '';
-            
-            // Restaurar lista completa de candidatos
-            filteredCandidatos = [...candidatos];
-            
-            // Actualizar selector de candidatos
-            actualizarSelectorCandidatos();
-            
-            // Mostrar mensaje
-            mostrarMensaje('Filtros eliminados. Mostrando todos los candidatos.');
-        }
-        
         // Función para cargar postulaciones cuando se selecciona un candidato
         document.getElementById('candidato-select').addEventListener('change', async function() {
             const candidatoId = this.value;
@@ -667,8 +545,8 @@
                 return;
             }
             
-            // Buscar el candidato en la lista filtrada
-            const candidato = filteredCandidatos.find(c => c.id_candidato == candidatoId);
+            // Mostrar información del candidato
+            const candidato = candidatos.find(c => c.id_candidato == candidatoId);
             if (candidato) {
                 document.getElementById('candidate-name').textContent = `${candidato.nombres} ${candidato.apellido_paterno} ${candidato.apellido_materno || ''}`;
                 
@@ -683,8 +561,8 @@
                 document.getElementById('candidate-avatar').textContent = iniciales || '<i class="bi bi-person-fill"></i>';
                 
                 // Mostrar información del partido si está disponible
-                if (candidato.nombre_partido) {
-                    document.getElementById('candidate-party').textContent = candidato.nombre_partido;
+                if (candidato.partido_politico) {
+                    document.getElementById('candidate-party').textContent = candidato.partido_politico;
                 } else {
                     document.getElementById('candidate-party').textContent = 'Sin información de partido';
                 }
